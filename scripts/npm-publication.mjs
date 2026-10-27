@@ -9,7 +9,8 @@ export function isPublished (specifier, run = command) {
   if (result.error) throw result.error;
   const response = JSON.parse(result.stdout);
   if (result.status === 0) {
-    if (response !== specifier.slice(specifier.lastIndexOf('@') + 1)) {
+    const versions = Array.isArray(response) ? response : [response];
+    if (versions.length !== 1 || versions[0] !== specifier.slice(specifier.lastIndexOf('@') + 1)) {
       throw new Error(`Unexpected registry version for ${specifier}: ${result.stdout}`);
     }
     return true;

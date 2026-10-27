@@ -17,6 +17,9 @@ function sequence (results) {
 test('only a missing version permits a new publication', () => {
   assert.equal(isPublished(specifier, () => missing), false);
   assert.equal(isPublished(specifier, () => available), true);
+  assert.equal(isPublished(specifier, () => ok(['1.0.0'])), true);
+  assert.throws(() => isPublished(specifier, () => ok([])), /Unexpected registry version/);
+  assert.throws(() => isPublished(specifier, () => ok(['1.0.0', '2.0.0'])), /Unexpected registry version/);
   assert.throws(() => isPublished(specifier, () => failure('E401', 'Unauthorized')), /Cannot check/);
   assert.throws(() => isPublished(specifier, () => ok('2.0.0')), /Unexpected registry version/);
 });
