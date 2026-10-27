@@ -2,12 +2,13 @@
 
 A transactional outbox for Node.js. Commit business data and events in one database transaction, then publish the committed events with a background worker.
 
-This pnpm monorepo contains two packages:
+This pnpm monorepo contains three packages:
 
 | Package | Responsibility |
 | --- | --- |
 | [`@taleland/outbox-core`](packages/core) | ORM-independent event creation, unit of work, publication, retries, and retention. No runtime dependencies. |
 | [`@taleland/outbox-mikro-orm`](packages/mikro-orm) | PostgreSQL persistence, entity schema, transactions, and concurrent worker locking through MikroORM 7. |
+| [`@taleland/outbox-nestjs`](packages/nestjs) | NestJS module, injectable services, async configuration, and optional scheduled jobs. |
 
 The core depends on an `OutboxStorage<Transaction>` interface and a `Publish` callback. It has no dependency on MikroORM, NestJS, or a message broker. Applications choose their storage strategy, transport, and scheduler.
 
@@ -26,6 +27,16 @@ pnpm add @taleland/outbox-core @taleland/outbox-mikro-orm @mikro-orm/core@^7.2.1
 ```
 
 For another database or ORM, install only `@taleland/outbox-core` and implement the [storage contract](packages/core/README.md#implementing-a-storage-strategy).
+
+## NestJS integration
+
+Use [`@taleland/outbox-nestjs`](packages/nestjs) for `OutboxModule.register` / `registerAsync`, injectable `OutboxService`, and optional processing/cleanup jobs. Supply your storage strategy and publisher through configuration. The NestJS package does not depend on MikroORM.
+
+```sh
+pnpm add @taleland/outbox-nestjs @taleland/outbox-core @nestjs/schedule@^12.0.2
+```
+
+See the [NestJS README](packages/nestjs/README.md) for a complete application example, async DI configuration, individual provider tokens, and shutdown behavior. Jobs are disabled by default; when enabled, the application initializes `ScheduleModule.forRoot()` once.
 
 ## Commit business data and an event together
 
@@ -174,7 +185,7 @@ export async function runWorker(processOutbox: () => Promise<void>, signal: Abor
 }
 ```
 
-In NestJS, register these functions as providers and call them from your application's scheduled jobs. Use `waitForCompletion: true` for a cron job if you want to prevent overlapping invocations in the same process. Run cleanup less frequently, for example once a day. Stop polling, await any active batch, then close the database and transport during shutdown.
+In NestJS, use `OutboxModule` from `@taleland/outbox-nestjs` to register providers and opt into scheduled jobs with `waitForCompletion: true`. Run cleanup less frequently, for example once a day. Stop polling, await any active batch, then close the database and transport during shutdown.
 
 ## Delivery semantics and defaults
 
@@ -213,7 +224,7 @@ pnpm install --frozen-lockfile
 pnpm lint
 pnpm build
 pnpm test          # Unit tests, then integration tests using a disposable PostgreSQL container
-pnpm pack:check    # Inspect both tarballs and import the isolated core package
+pnpm pack:check    # Inspect all three tarballs and import the isolated core package
 ```
 
 Build before running tests: tests execute the compiled JavaScript. CI runs the same checks. Dependency PRs from Dependabot are squash-merged only after the PR title check, build, lint, tests, and package checks pass for their current head commit.
@@ -222,13 +233,13 @@ Commits and PR titles follow [Conventional Commits 1.0.0](AGENTS.md). The full s
 
 ## Release preparation
 
-Both packages use a fixed Changesets version group. The initial changeset proposes `1.0.0`; it has not been consumed or published.
+All three packages use a fixed Changesets version group. The initial changeset proposes `1.0.0`; it has not been consumed or published.
 
 For a future release, add a changeset with `pnpm changeset`. Prepare a separate version PR by running `pnpm version-packages` and `pnpm install --lockfile-only`, then review the manifests, changelogs, and lockfile. See [Changesets configuration](https://changesets.dev/guide/config) for the fixed-group behavior.
 
-After review and an explicit release decision, configure npm publishing for **both** packages and the `taleland/outbox` repository's `publish.yml` workflow. The workflow uses npm CLI OIDC authentication with no `NPM_TOKEN`; package access and [Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) must be set up before enabling it. Public provenance also requires a public repository. Enabling the repository variable `NPM_PUBLISH_ENABLED=true` allows publishing versioned packages on `main` pushes or manual dispatch. Keep it unset during initial review.
+After review and an explicit release decision, configure npm publishing for **all three** packages and the `taleland/outbox` repository's `publish.yml` workflow. The workflow uses npm CLI OIDC authentication with no `NPM_TOKEN`; package access and [Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) must be set up before enabling it. Public provenance also requires a public repository. Enabling the repository variable `NPM_PUBLISH_ENABLED=true` allows publishing versioned packages on `main` pushes or manual dispatch. Keep it unset during initial review.
 
-The release command rejects placeholder `0.0.0` versions and unconsumed changesets. It packs through pnpm to resolve `workspace:` dependency ranges, then publishes the tarballs with npm. Already-published versions are skipped, allowing a failed two-package release to be retried. The workflow tags versions only after both packages have been published successfully.
+The release command rejects placeholder `0.0.0` versions and unconsumed changesets. It packs through pnpm to resolve `workspace:` dependency ranges, then publishes the tarballs with npm. Already-published versions are skipped, allowing a partially completed release to be retried. The workflow tags versions only after all packages have been published successfully.
 
 ## License
 

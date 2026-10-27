@@ -9,7 +9,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const temporary = mkdtempSync(join(tmpdir(), 'outbox-pack-'));
 const manifests = [];
 try {
-  for (const directory of ['core', 'mikro-orm']) {
+  for (const directory of ['core', 'mikro-orm', 'nestjs']) {
     const output = join(temporary, directory);
     mkdirSync(output);
     execFileSync('pnpm', ['pack', '--pack-destination', output], {
@@ -37,7 +37,10 @@ try {
     }
     console.log(`Verified ${manifest.name}@${manifest.version}: ${files.length} files`);
   }
-  assert.equal(manifests[1].dependencies['@taleland/outbox-core'], `^${manifests[0].version}`);
+  for (const manifest of manifests.slice(1)) {
+    assert.equal(manifest.dependencies['@taleland/outbox-core'], `^${manifests[0].version}`);
+  }
+  assert.ok(!Object.keys({ ...manifests[2].dependencies, ...manifests[2].peerDependencies }).some(name => name.startsWith('@mikro-orm/')));
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

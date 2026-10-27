@@ -1,0 +1,20 @@
+{
+  "extends": "@taleland/tsconfig/lib",
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2024"
+    ],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
