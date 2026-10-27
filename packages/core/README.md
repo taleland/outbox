@@ -2,11 +2,7 @@
 
 ORM-independent transactional outbox primitives for Node.js 22.17+. No runtime dependencies, ORM decorators, framework providers, or broker client are required.
 
-**Unreleased:** this package is part of the initial review of [taleland/outbox](https://github.com/taleland/outbox).
-
 ## Usage
-
-After the first release:
 
 ```sh
 pnpm add @taleland/outbox-core
