@@ -1,0 +1,6 @@
+packages:
+  - packages/*
+
+onlyBuiltDependencies:
+  - cpu-features
+  - ssh2

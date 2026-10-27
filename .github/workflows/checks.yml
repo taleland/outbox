@@ -1,0 +1,67 @@
+name: Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pr-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure squash commit title is conventional
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          conventional_commit_regex='^(feat|fix|perf|refactor|revert|docs|style|test|build|ci|chore)(\([^)]+\))?(!)?: .+'
+          if [[ ! "$PR_TITLE" =~ $conventional_commit_regex ]]; then
+            echo "Pull request title must follow Conventional Commits."
+            exit 1
+          fi
+
+  run:
+    name: Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm test
+      - run: pnpm pack:check
+
+  dependabot-auto-merge:
+    name: Dependabot auto-merge
+    needs: [validate-pr-title, run]
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.base_ref == 'main' &&
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Merge verified Dependabot commit
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
+      - name: Dispatch release if enabled
+        if: vars.NPM_PUBLISH_ENABLED == 'true'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: gh workflow run publish.yml --repo "$GITHUB_REPOSITORY" --ref "$BASE_REF"
