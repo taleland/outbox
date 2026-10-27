@@ -8,7 +8,7 @@ if (process.env.NPM_PUBLISH_ENABLED !== 'true') {
   throw new Error('Publishing is disabled. Complete the release setup before enabling NPM_PUBLISH_ENABLED.');
 }
 const root = fileURLToPath(new URL('../', import.meta.url));
-const packages = ['core', 'mikro-orm'].map(directory => ({
+const packages = ['core', 'mikro-orm', 'nestjs', 'nodets-bus'].map(directory => ({
   directory: join(root, 'packages', directory),
   manifest: JSON.parse(readFileSync(join(root, 'packages', directory, 'package.json'), 'utf8')),
 }));

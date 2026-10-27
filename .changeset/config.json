@@ -2,11 +2,21 @@
   "$schema": "https://unpkg.com/@changesets/config/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["@taleland/outbox-core", "@taleland/outbox-mikro-orm"]],
+  "fixed": [
+    [
+      "@taleland/outbox-core",
+      "@taleland/outbox-mikro-orm",
+      "@taleland/outbox-nestjs",
+      "@taleland/outbox-nodets-bus"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [],
-  "privatePackages": { "version": false, "tag": false }
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  }
 }
