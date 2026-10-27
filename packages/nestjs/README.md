@@ -147,6 +147,8 @@ export class ApplicationOutboxModule {}
 
 Use singleton configuration, storage, and publisher providers. Request-scoped dependencies are unsuitable for scheduled work. Configuration failures reject Nest startup. For a global async registration, set `global: true` on `registerAsync` itself, not on the factory's returned value.
 
+For node-ts bus publishing, use `createNodeTsPublish(getBus)` from [`@taleland/outbox-nodets-bus`](../nodets-bus/README.md#nestjs-dependency-injection). Its README shows how to inject the named bus resolver alongside the storage strategy.
+
 ## Inject individual operations
 
 `OutboxService<Transaction>` exposes `create`, `withOutbox`, `processOutbox`, and `cleanOutbox`. Their signatures and semantics are the same as the core functions. The transaction type is a TypeScript annotation; it must match your configured storage strategy.

@@ -6,7 +6,8 @@
     [
       "@taleland/outbox-core",
       "@taleland/outbox-mikro-orm",
-      "@taleland/outbox-nestjs"
+      "@taleland/outbox-nestjs",
+      "@taleland/outbox-nodets-bus"
     ]
   ],
   "linked": [],

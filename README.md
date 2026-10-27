@@ -2,13 +2,14 @@
 
 A transactional outbox for Node.js. Commit business data and events in one database transaction, then publish the committed events with a background worker.
 
-This pnpm monorepo contains three packages:
+This pnpm monorepo contains four packages:
 
 | Package | Responsibility |
 | --- | --- |
 | [`@taleland/outbox-core`](packages/core) | ORM-independent event creation, unit of work, publication, retries, and retention. No runtime dependencies. |
 | [`@taleland/outbox-mikro-orm`](packages/mikro-orm) | PostgreSQL persistence, entity schema, transactions, and concurrent worker locking through MikroORM 7. |
 | [`@taleland/outbox-nestjs`](packages/nestjs) | NestJS module, injectable services, async configuration, and optional scheduled jobs. |
+| [`@taleland/outbox-nodets-bus`](packages/nodets-bus) | Publisher adapter for named node-ts buses, routing metadata, and stable outbox IDs. |
 
 The core depends on an `OutboxStorage<Transaction>` interface and a `Publish` callback. It has no dependency on MikroORM, NestJS, or a message broker. Applications choose their storage strategy, transport, and scheduler.
 
@@ -131,36 +132,27 @@ The MikroORM strategy rejects a nonempty insert outside an active transaction. `
 
 The publisher receives the stored `payload` unchanged and a separate `{ metadata, outboxId }` context. The application adapter interprets metadata and converts the payload to its transport's format.
 
-For an application using `@taleland/nodets-bus-core`, choose your own metadata convention when emitting:
+Use [`@taleland/outbox-nodets-bus`](packages/nodets-bus) with `@taleland/nodets-bus-core` or directly configured node-ts bus instances:
 
 ```ts
 emit({
   payload: { orderId },
-  metadata: { eventType: 'orders/placed', revision: 1, bus: 'orders' },
+  metadata: { busToken: 'events', eventName: 'orders/created', eventVersion: 1 },
 });
 ```
 
-Only the adapter knows about this convention and the bus's `$name`/`$version` format. Obtain the configured `GetBus` provider and adapt it:
+The adapter validates this metadata, creates the bus event, and forwards the stable outbox ID:
 
 ```ts
-import type { GetBus } from '@taleland/nodets-bus-core';
-import { createProcessOutbox } from '@taleland/outbox-core';
-import type { OutboxStorage } from '@taleland/outbox-core';
+import { createProcessOutbox, type OutboxStorage } from '@taleland/outbox-core';
+import { createNodeTsPublish, type GetNodeTsBus } from '@taleland/outbox-nodets-bus';
 
-export function createBusWorker<Transaction>(storage: OutboxStorage<Transaction>, getBus: GetBus) {
-  return createProcessOutbox(storage, async (payload, { metadata, outboxId }) => {
-    const { eventType, revision, bus } = metadata;
-    if (typeof eventType !== 'string' || !eventType.trim()
-      || typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision < 0
-      || typeof bus !== 'string' || !bus.trim()) {
-      throw new TypeError('Invalid metadata for this bus adapter');
-    }
-    await getBus(bus).publish({ ...payload, $name: eventType, $version: revision }, {
-      attributes: { outboxId },
-    });
-  });
+export function createBusWorker<Transaction>(storage: OutboxStorage<Transaction>, getBus: GetNodeTsBus) {
+  return createProcessOutbox(storage, createNodeTsPublish(getBus));
 }
 ```
+
+See the [publisher README](packages/nodets-bus/README.md) for the metadata contract and a complete Nest DI configuration using `OutboxModule.registerJobsAsync`.
 
 The selected bus must be initialized. Broker exchange and consumer queue bindings belong to the bus configuration. A separate queue per consuming module lets each module receive its own copy; multiple instances sharing one module queue compete for that module's messages. HTTP, Kafka, or other publishers can use entirely different metadata or none at all.
 
@@ -224,7 +216,7 @@ pnpm install --frozen-lockfile
 pnpm lint
 pnpm build
 pnpm test          # Unit tests, then integration tests using a disposable PostgreSQL container
-pnpm pack:check    # Inspect all three tarballs and import the isolated core package
+pnpm pack:check    # Inspect all four tarballs and import the isolated core package
 ```
 
 Build before running tests: tests execute the compiled JavaScript. CI runs the same checks. Dependency PRs from Dependabot are squash-merged only after the PR title check, build, lint, tests, and package checks pass for their current head commit.
@@ -233,11 +225,11 @@ Commits and PR titles follow [Conventional Commits 1.0.0](AGENTS.md). The full s
 
 ## Release preparation
 
-All three packages use a fixed Changesets version group. The initial changeset proposes `1.0.0`; it has not been consumed or published.
+All four packages use a fixed Changesets version group. The initial changeset proposes `1.0.0`; it has not been consumed or published.
 
 For a future release, add a changeset with `pnpm changeset`. Prepare a separate version PR by running `pnpm version-packages` and `pnpm install --lockfile-only`, then review the manifests, changelogs, and lockfile. See [Changesets configuration](https://changesets.dev/guide/config) for the fixed-group behavior.
 
-After review and an explicit release decision, configure npm publishing for **all three** packages and the `taleland/outbox` repository's `publish.yml` workflow. The workflow uses npm CLI OIDC authentication with no `NPM_TOKEN`; package access and [Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) must be set up before enabling it. Public provenance also requires a public repository. Enabling the repository variable `NPM_PUBLISH_ENABLED=true` allows publishing versioned packages on `main` pushes or manual dispatch. Keep it unset during initial review.
+After review and an explicit release decision, configure npm publishing for **all four** packages and the `taleland/outbox` repository's `publish.yml` workflow. The workflow uses npm CLI OIDC authentication with no `NPM_TOKEN`; package access and [Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) must be set up before enabling it. Public provenance also requires a public repository. Enabling the repository variable `NPM_PUBLISH_ENABLED=true` allows publishing versioned packages on `main` pushes or manual dispatch. Keep it unset during initial review.
 
 The release command rejects placeholder `0.0.0` versions and unconsumed changesets. It packs through pnpm to resolve `workspace:` dependency ranges, then publishes the tarballs with npm. Already-published versions are skipped, allowing a partially completed release to be retried. The workflow tags versions only after all packages have been published successfully.
 

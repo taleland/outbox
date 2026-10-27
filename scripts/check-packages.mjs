@@ -9,7 +9,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const temporary = mkdtempSync(join(tmpdir(), 'outbox-pack-'));
 const manifests = [];
 try {
-  for (const directory of ['core', 'mikro-orm', 'nestjs']) {
+  for (const directory of ['core', 'mikro-orm', 'nestjs', 'nodets-bus']) {
     const output = join(temporary, directory);
     mkdirSync(output);
     execFileSync('pnpm', ['pack', '--pack-destination', output], {
@@ -28,6 +28,11 @@ try {
     manifests.push(manifest);
     assert.equal(manifest.license, 'Apache-2.0');
     assert.ok(!JSON.stringify(manifest.dependencies ?? {}).includes('workspace:'));
+    if (directory === 'nodets-bus') {
+      const module = await import(pathToFileURL(resolve(output, 'package', manifest.main)).href);
+      assert.equal(typeof module.createNodeTsPublish, 'function');
+      assert.ok(!Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies }).some(name => name.startsWith('@nestjs/') || name.startsWith('@mikro-orm/')));
+    }
     if (directory === 'core') {
       assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0);
       assert.equal(Object.keys(manifest.peerDependencies ?? {}).length, 0);
