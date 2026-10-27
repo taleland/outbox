@@ -234,3 +234,7 @@ The release command rejects placeholder `0.0.0` versions and unconsumed changese
 ## License
 
 [Apache-2.0](LICENSE).
+
+## Changelogs and GitHub Releases
+
+See the [changelog index](CHANGELOG.md) for per-package history. Successful publication creates package tags and [GitHub Releases](https://github.com/taleland/outbox/releases) from the corresponding changelog entries.
