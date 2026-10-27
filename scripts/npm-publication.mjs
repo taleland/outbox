@@ -19,7 +19,7 @@ export function isPublished (specifier, run = command) {
 }
 
 export async function publishPackage (specifier, archive, {
-  run = command, wait = setTimeout, attempts = 30, delayMs = 10_000,
+  run = command, wait = setTimeout, attempts = 120, delayMs = 10_000,
 } = {}) {
   const result = run(['publish', archive, '--access', 'public', '--json', registry]);
   if (result.error) throw result.error;
