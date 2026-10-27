@@ -32,16 +32,16 @@ await withOutbox(async ({ transaction, emit }) => {
   // Save business entities with `transaction` so they commit with the event.
   // transaction.persist(transaction.create(Order, { id: orderId, total: 4200 }));
   emit({
-    $name: 'orders/placed', $version: 1, $queueName: 'orders', orderId: 'order-123',
+    payload: { orderId: 'order-123' },
   });
 });
 
-const processOutbox = createProcessOutbox(storage, async (event, context) => {
+const processOutbox = createProcessOutbox(storage, async (payload, context) => {
   // Replace with your transport's acknowledged publish operation.
   const response = await fetch(process.env.EVENT_RECEIVER_URL!, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Idempotency-Key': context.outboxId },
-    body: JSON.stringify({ queue: context.queueName, event }),
+    body: JSON.stringify(payload),
     signal: AbortSignal.timeout(5000),
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -57,9 +57,9 @@ Create the schema with a migration before running this example. The [root README
 
 ## Migrations
 
-Include the exported `OutboxSchema` in both runtime and migration CLI configuration. Generate, review, and apply a migration in the consuming application. The library does not create or alter tables automatically.
+Include the exported `OutboxSchema` in both runtime and migration CLI configuration. Generate, review, and apply a migration in the consuming application. The library does not create or alter tables automatically. The initial schema has no dedicated event-name, version, or queue columns; transport-specific data belongs in application-defined metadata. If you created a local schema from an earlier initial-PR revision, regenerate its migration or recreate the disposable database.
 
-The schema maps `OutboxMessage` to the `outbox` table, including a UUID primary key, JSONB payload, state/retry fields, timestamps, and an index on `state`, `nextAttemptAt`, and `createdAt`. MikroORM's naming strategy determines property column names; keep the same configuration in migrations and at runtime.
+The schema maps `OutboxMessage` to the `outbox` table, including a UUID primary key, JSONB `payload` and `metadata` objects, state/retry fields, timestamps, and an index on `state`, `nextAttemptAt`, and `createdAt`. MikroORM's naming strategy determines property column names; keep the same configuration in migrations and at runtime.
 
 ## Transactions and workers
 

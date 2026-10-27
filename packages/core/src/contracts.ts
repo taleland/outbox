@@ -1,20 +1,17 @@
 import { type OutboxMessage } from './message.js';
 
-export interface OutboxEvent {
-  readonly $name: string;
-  readonly $version: number;
-  readonly $queueName: string;
+/** Payload and optional application-defined metadata; no transport fields are reserved. */
+export interface OutboxEvent<Payload extends object = object> {
+  readonly payload: Payload;
+  readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
-export interface PublishedEvent extends Record<string, unknown> {
-  $name: string;
-  $version: number;
+export interface PublishContext {
+  readonly outboxId: string;
+  readonly metadata: Readonly<Record<string, unknown>>;
 }
 
-export type Publish = (
-  event: PublishedEvent,
-  context: { queueName: string; outboxId: string }
-) => Promise<void>;
+export type Publish = (payload: object, context: PublishContext) => Promise<void>;
 
 export interface BatchQuery {
   now: Date;

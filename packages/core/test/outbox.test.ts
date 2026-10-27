@@ -10,7 +10,7 @@ const transaction = { id: 'transaction' };
 const storage = (overrides: Partial<OutboxStorage<typeof transaction>> = {}): OutboxStorage<typeof transaction> => ({
   transaction: unexpected, insert: unexpected, withBatch: unexpected, cleanDelivered: unexpected, ...overrides,
 });
-const event = { $name: 'orders/placed', $version: 1, $queueName: 'orders', details: { total: 42 } };
+const event = { payload: { details: { total: 42 } }, metadata: { destination: 'orders', headers: { revision: 1 } } };
 const timestamp = new Date('2026-01-01T00:00:00Z');
 
 async function message (): Promise<OutboxMessage> {
@@ -31,16 +31,52 @@ test('creation snapshots the payload and validates the whole batch before storag
   }), { uuid: () => 'stable-id', now: () => timestamp });
   const source = structuredClone(event);
   await create([source], transaction);
-  source.details.total = 99;
-  assert.deepEqual(records[0].body, { details: { total: 42 } });
-  assert.equal(records[0].queueName, 'orders');
+  source.payload.details.total = 99;
+  source.metadata.headers.revision = 99;
+  assert.deepEqual(records[0].payload, { details: { total: 42 } });
+  assert.deepEqual(records[0].metadata, { destination: 'orders', headers: { revision: 1 } });
   assert.equal(records[0].id, 'stable-id');
   assert.equal(records[0].nextAttemptAt, timestamp);
-  await assert.rejects(create([event, { ...event, $queueName: ' ' }], transaction), /missing/);
-  await assert.rejects(create([{ ...event, $version: 0.5 }], transaction), /version/);
-  await assert.rejects(create([{ ...event, $name: '' }], transaction), /name/);
+  await assert.rejects(create([event, { payload: null } as unknown as OutboxEvent], transaction), /payload/);
+  await assert.rejects(create([{ payload: {}, metadata: [] } as unknown as OutboxEvent], transaction), /metadata/);
+  await assert.rejects(create([event, { payload: { unsupported: () => {} } }], transaction), /could not be cloned/);
   await create([], transaction);
   assert.equal(writes, 1);
+});
+
+test('payload fields are not reserved and metadata is optional', async () => {
+  const payload = { $name: 'business value', $version: 'not a protocol version', $queueName: null };
+  let record!: OutboxMessage;
+  const store = storage({
+    insert: async rows => { [record] = rows; },
+    withBatch: async (_, work) => await work({ messages: [record], save: async () => {} }),
+  });
+  await createCreate(store)([{ payload }], transaction);
+  assert.deepEqual(record.payload, payload);
+  assert.deepEqual(record.metadata, {});
+  let calls = 0;
+  await createProcessOutbox(store, async (published, context) => {
+    calls++;
+    assert.deepEqual(published, payload);
+    assert.deepEqual(context, { outboxId: record.id, metadata: {} });
+  })();
+  assert.equal(calls, 1);
+  assert.equal(record.state, 'DELIVERED');
+});
+
+test('publisher mutation cannot change the persisted payload or metadata for retries', async () => {
+  const record = await message();
+  const store = storage({
+    withBatch: async (_, work) => await work({ messages: [record], save: async () => {} }),
+  });
+  await createProcessOutbox(store, async (payload, { metadata }) => {
+    (payload as typeof event.payload).details.total = 99;
+    (metadata.headers as { revision: number }).revision = 99;
+    throw new Error('transport rejected');
+  })();
+  assert.deepEqual(record.payload, event.payload);
+  assert.deepEqual(record.metadata, event.metadata);
+  assert.equal(record.state, 'FAILED');
 });
 
 test('unit of work inserts all events in the supplied transaction after successful work', async () => {
@@ -74,18 +110,18 @@ test('unit of work propagates callback and commit failures, including undefined 
 
 test('one emit call accepts different event classes without index signatures', async () => {
   class FirstEvent {
-    $name = 'first'; $version = 1; $queueName = 'events'; first = 42;
+    first = 42;
   }
   class SecondEvent {
-    $name = 'second'; $version = 1; $queueName = 'events'; second = true;
+    second = true;
   }
   const rows: OutboxMessage[] = [];
   const store = storage({
     transaction: async work => await work(transaction),
     insert: async messages => { rows.push(...messages); },
   });
-  await createWithOutbox(store)(async ({ emit }) => { emit(new FirstEvent(), new SecondEvent()); });
-  assert.deepEqual(rows.map(row => row.body), [{ first: 42 }, { second: true }]);
+  await createWithOutbox(store)(async ({ emit }) => { emit({ payload: new FirstEvent() }, { payload: new SecondEvent() }); });
+  assert.deepEqual(rows.map(row => row.payload), [{ first: 42 }, { second: true }]);
 });
 
 test('state transitions count retries, reject illegal transitions, and preserve identity', async () => {
@@ -113,8 +149,8 @@ test('publisher failures schedule a retry and successful publication uses stable
   assert.equal(record.state, 'FAILED');
   assert.equal(record.nextAttemptAt.getTime(), timestamp.getTime() + 5000);
   await createProcessOutbox(store, async (payload, context) => {
-    assert.deepEqual(context, { queueName: 'orders', outboxId: 'stable-id' });
-    assert.deepEqual(payload, { details: { total: 42 }, $name: 'orders/placed', $version: 1 });
+    assert.deepEqual(context, { metadata: event.metadata, outboxId: 'stable-id' });
+    assert.deepEqual(payload, { details: { total: 42 } });
   }, { now: () => timestamp })();
   assert.deepEqual(states, ['PROCESSED', 'FAILED', 'PROCESSED', 'DELIVERED']);
   assert.equal(record.retries, 1);

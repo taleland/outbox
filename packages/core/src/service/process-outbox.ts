@@ -24,8 +24,8 @@ export function createProcessOutbox<Transaction> (
       message.process();
       await batch.save(message);
       try {
-        await publish({ ...message.body, $name: message.name, $version: message.version }, {
-          queueName: message.queueName, outboxId: message.id,
+        await publish(structuredClone(message.payload), {
+          metadata: structuredClone(message.metadata), outboxId: message.id,
         });
       } catch (error) {
         message.fail();

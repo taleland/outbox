@@ -2,10 +2,8 @@ export type OutboxState = 'PENDING' | 'PROCESSED' | 'DELIVERED' | 'FAILED';
 
 export class OutboxMessage {
   id!: string;
-  name!: string;
-  queueName!: string;
-  version!: number;
-  body!: Record<string, unknown>;
+  payload!: object;
+  metadata!: Record<string, unknown>;
   state: OutboxState = 'PENDING';
   retries = 0;
   createdAt!: Date;

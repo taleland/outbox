@@ -16,7 +16,7 @@ const OrderSchema = new EntitySchema<Order>({
   properties: { id: { type: 'uuid', primary: true }, total: { type: 'integer' } },
 });
 const event = (orderId = randomUUID()) => ({
-  $name: 'orders/placed', $version: 1, $queueName: 'orders', orderId,
+  payload: { orderId }, metadata: { destination: 'orders', headers: { revision: 1 } },
 });
 
 describe('MikroORM PostgreSQL strategy', { timeout: 120000 }, () => {
@@ -60,7 +60,8 @@ describe('MikroORM PostgreSQL strategy', { timeout: 120000 }, () => {
     }), id);
     assert.equal(await orm.em.fork().count(Order), 1);
     const [saved] = await orm.em.fork().findAll(OutboxMessage);
-    assert.equal(saved.body.orderId, id);
+    assert.deepEqual(saved.payload, { orderId: id });
+    assert.deepEqual(saved.metadata, event(id).metadata);
     assert.equal(saved.state, 'PENDING');
 
     await assert.rejects(withOutbox(async ({ transaction, emit }) => {
@@ -72,8 +73,8 @@ describe('MikroORM PostgreSQL strategy', { timeout: 120000 }, () => {
     await assert.rejects(withOutbox(async ({ transaction, emit }) => {
       transaction.persist(transaction.create(Order, { id: randomUUID(), total: 99 }));
       await transaction.flush();
-      emit({ ...event(), $queueName: '' });
-    }), /missing/);
+      emit({ payload: { unsupported: () => {} } });
+    }), /could not be cloned/);
     assert.equal(await orm.em.fork().count(Order), 1);
     assert.equal(await orm.em.fork().count(OutboxMessage), 1);
   });
@@ -165,6 +166,33 @@ describe('MikroORM PostgreSQL strategy', { timeout: 120000 }, () => {
     const [failed] = await orm.em.fork().findAll(OutboxMessage);
     assert.equal(failed.state, 'FAILED');
     assert.equal(failed.retries, 3);
+  });
+
+  test('a metadata-free payload survives storage, a failed publish, and a retry unchanged', async () => {
+    let clock = new Date('2026-03-01T00:00:00Z');
+    const payload = { $name: 'ordinary data', $version: 'custom', $queueName: null, nested: { total: 42 } };
+    const create = createCreate(store, { now: () => clock });
+    await store.transaction(async tx => { await create([{ payload }], tx); });
+    const ids: string[] = [];
+    await createProcessOutbox(store, async (published, context) => {
+      ids.push(context.outboxId);
+      assert.deepEqual(published, payload);
+      assert.deepEqual(context.metadata, {});
+      (published as typeof payload).nested.total = 99;
+      throw new Error('temporary transport failure');
+    }, { now: () => clock })();
+    const [failed] = await orm.em.fork().findAll(OutboxMessage);
+    assert.equal(failed.state, 'FAILED');
+    assert.deepEqual(failed.payload, payload);
+    assert.deepEqual(failed.metadata, {});
+    clock = new Date(clock.getTime() + 5000);
+    await createProcessOutbox(store, async (published, context) => {
+      ids.push(context.outboxId);
+      assert.deepEqual(published, payload);
+      assert.deepEqual(context.metadata, {});
+    }, { now: () => clock })();
+    assert.deepEqual(ids, [failed.id, failed.id]);
+    assert.equal(await orm.em.fork().count(OutboxMessage, { state: 'DELIVERED' }), 1);
   });
 
   test('cleanup soft-deletes only old delivered rows and leaves other states eligible', async () => {

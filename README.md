@@ -66,21 +66,17 @@ try {
     const id = randomUUID();
     transaction.persist(transaction.create(Order, { id, total: 4200 }));
     emit({
-      $name: 'orders/placed',
-      $version: 1,
-      $queueName: 'orders',
-      orderId: id,
-      total: 4200,
+      payload: { orderId: id, total: 4200 },
     });
     return id;
   });
 
   // An HTTP receiver illustrates the transport boundary. A broker adapter can be used instead.
-  const processOutbox = createProcessOutbox(storage, async (event, { queueName, outboxId }) => {
-    const response = await fetch(`${process.env.EVENT_RECEIVER_URL}/${encodeURIComponent(queueName)}`, {
+  const processOutbox = createProcessOutbox(storage, async (payload, { outboxId }) => {
+    const response = await fetch(process.env.EVENT_RECEIVER_URL!, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Idempotency-Key': outboxId },
-      body: JSON.stringify(event),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw new Error(`Publication failed: HTTP ${response.status}`);
@@ -97,7 +93,9 @@ try {
 
 If the callback, event creation, flush, or commit fails, neither the business changes nor its outbox rows commit. Perform all database work through the callback's `transaction`. This strategy opens a new independent transaction; it does not join an ambient transaction. An HTTP call, email, or broker publish performed inside the callback cannot be rolled back by the database.
 
-Events require a nonempty `$name`, a nonnegative integer `$version`, and a nonempty `$queueName`. Other enumerable properties form the payload and must be JSON-serializable. The payload is cloned when outbox rows are created, after the callback completes. Avoid mutating an event after calling `emit`.
+Events are envelopes with a `payload` object and an optional `metadata` object. Both must contain JSON-serializable data. The core imposes no event-name, version, destination, or broker-specific fields and reserves no keys inside either object. Metadata defaults to `{}` and can carry application-defined routing information, headers, or tracing data.
+
+Payload and metadata are cloned when outbox rows are created, after the callback completes. Avoid mutating an envelope after calling `emit`. Each publication attempt receives fresh copies, so a publisher cannot accidentally mutate the stored data used for retries.
 
 ## Use an existing transaction
 
@@ -111,7 +109,7 @@ await orm.em.fork().transactional(async transaction => {
   const id = randomUUID();
   transaction.persist(transaction.create(Order, { id, total: 4200 }));
   await createOutbox([{
-    $name: 'orders/placed', $version: 1, $queueName: 'orders', orderId: id,
+    payload: { orderId: id },
   }], transaction);
 });
 ```
@@ -120,9 +118,18 @@ The MikroORM strategy rejects a nonempty insert outside an active transaction. `
 
 ## Connect a message bus
 
-The publisher receives `{ ...payload, $name, $version }` and a separate `{ queueName, outboxId }` context. `$queueName` selects a transport; it is not included in the published payload.
+The publisher receives the stored `payload` unchanged and a separate `{ metadata, outboxId }` context. The application adapter interprets metadata and converts the payload to its transport's format.
 
-For an application using `@taleland/nodets-bus-core`, obtain the configured `GetBus` provider and adapt it:
+For an application using `@taleland/nodets-bus-core`, choose your own metadata convention when emitting:
+
+```ts
+emit({
+  payload: { orderId },
+  metadata: { eventType: 'orders/placed', revision: 1, bus: 'orders' },
+});
+```
+
+Only the adapter knows about this convention and the bus's `$name`/`$version` format. Obtain the configured `GetBus` provider and adapt it:
 
 ```ts
 import type { GetBus } from '@taleland/nodets-bus-core';
@@ -130,13 +137,21 @@ import { createProcessOutbox } from '@taleland/outbox-core';
 import type { OutboxStorage } from '@taleland/outbox-core';
 
 export function createBusWorker<Transaction>(storage: OutboxStorage<Transaction>, getBus: GetBus) {
-  return createProcessOutbox(storage, async (event, { queueName, outboxId }) => {
-    await getBus(queueName).publish(event, { attributes: { outboxId } });
+  return createProcessOutbox(storage, async (payload, { metadata, outboxId }) => {
+    const { eventType, revision, bus } = metadata;
+    if (typeof eventType !== 'string' || !eventType.trim()
+      || typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision < 0
+      || typeof bus !== 'string' || !bus.trim()) {
+      throw new TypeError('Invalid metadata for this bus adapter');
+    }
+    await getBus(bus).publish({ ...payload, $name: eventType, $version: revision }, {
+      attributes: { outboxId },
+    });
   });
 }
 ```
 
-The selected bus must be initialized and its token must match `$queueName`. Broker exchange and consumer queue bindings belong to the bus configuration. A separate queue per consuming module lets each module receive its own copy; multiple instances sharing one module queue compete for that module's messages.
+The selected bus must be initialized. Broker exchange and consumer queue bindings belong to the bus configuration. A separate queue per consuming module lets each module receive its own copy; multiple instances sharing one module queue compete for that module's messages. HTTP, Kafka, or other publishers can use entirely different metadata or none at all.
 
 Define publisher success carefully: the callback must reject on publication failure and resolve only after the acknowledgement required by your application. Check whether your transport waits for durable broker confirmation; resolving after an in-memory enqueue is not a durable delivery guarantee. Configure transport timeouts so a stalled publisher cannot hold database locks indefinitely.
 

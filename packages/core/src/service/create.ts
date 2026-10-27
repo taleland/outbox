@@ -16,18 +16,18 @@ export function createCreate<Transaction> (
   return async (events, transaction) => {
     if (events.length === 0) return;
     const messages = events.map(event => {
-      const { $name, $version, $queueName, ...body } = event;
-      if (typeof $name !== 'string' || !$name.trim()) throw new TypeError('Event $name must be a nonempty string');
-      if (!Number.isSafeInteger($version) || $version < 0) throw new TypeError('Event $version must be a nonnegative integer');
-      if (typeof $queueName !== 'string' || !$queueName.trim()) throw new TypeError(`Event ${$name} is missing $queueName`);
+      const { payload, metadata = {} } = event;
+      for (const [name, value] of [['payload', payload], ['metadata', metadata]]) {
+        if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+          throw new TypeError(`Outbox ${name} must be an object`);
+        }
+      }
       const message = new OutboxMessage();
       const timestamp = now();
       Object.assign(message, {
         id: uuid(),
-        name: $name,
-        version: $version,
-        queueName: $queueName,
-        body: structuredClone(body),
+        payload: structuredClone(payload),
+        metadata: structuredClone(metadata),
         createdAt: timestamp,
         updatedAt: timestamp,
         nextAttemptAt: timestamp,
