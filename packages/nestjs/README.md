@@ -26,12 +26,11 @@ export function configureOutbox<Transaction>(storage: OutboxStorage<Transaction>
     publish,
     process: { batchSize: 100, maxRetries: 3, retryDelayMs: 5000 },
     clean: { retentionMs: 7 * 24 * 60 * 60 * 1000 },
-    jobs: false, // The default. No timers are started.
   });
 }
 ```
 
-Import the returned dynamic module in the Nest module that needs outbox services. Set `global: true` to make the services available to all modules, or re-export `OutboxModule` through a shared application module. Register one configured outbox module per application.
+Import the returned dynamic module in the Nest module that needs outbox services. Set `global: true` to make the services available to all modules, or re-export `OutboxModule` through a shared application module. Register one configured outbox module per application. `register` and `registerAsync` provide services without scheduling work. Use `registerJobs` or `registerJobsAsync` with the same configuration when this application should also process and clean up the outbox.
 
 ## Complete MikroORM example
 
@@ -84,7 +83,7 @@ class OrdersService {
 @Module({
   imports: [
     ScheduleModule.forRoot(), // Initialize once in the application when jobs are enabled.
-    OutboxModule.register({
+    OutboxModule.registerJobs({
       storage: new MikroOrmOutboxStorage(orm.em),
       publish: async (payload, { outboxId }) => {
         const response = await fetch(process.env.EVENT_RECEIVER_URL!, {
@@ -95,7 +94,6 @@ class OrdersService {
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
       },
-      jobs: {}, // Process every second; clean up at midnight UTC.
     }),
   ],
   providers: [OrdersService],
@@ -140,7 +138,6 @@ import { TransportModule, EVENT_PUBLISHER } from './transport.module.js';
       storage: new MikroOrmOutboxStorage(orm.em),
       publish,
       process: { batchSize: 50 },
-      jobs: false,
     }),
   })],
   exports: [OutboxModule],
@@ -188,21 +185,59 @@ Business writes must use the transaction supplied by `withOutbox`, or the same c
 
 ## Optional jobs
 
-Initialize `ScheduleModule.forRoot()` once in the application. `OutboxModule` uses that existing scheduler and does not initialize another scheduler or alter other jobs.
+Initialize `ScheduleModule.forRoot()` once in the application and choose `OutboxModule.registerJobs(options)` instead of `register(options)`. For dependency injection, choose `registerJobsAsync(options)` instead of `registerAsync(options)`; it accepts the same `imports`, `inject`, and `useFactory` configuration. Each variant exports the same outbox services. Do not register both variants in the same application.
+
+The built-in worker uses Nest's `@Cron` decorators and `CronExpression` constants:
+
+| Job name | Schedule | Behavior |
+| --- | --- | --- |
+| `outbox.process` | `CronExpression.EVERY_SECOND` | Publish one eligible batch. |
+| `outbox.clean` | `CronExpression.EVERY_DAY_AT_MIDNIGHT`, UTC | Soft-delete delivered history according to retention settings. |
+
+Nest registers, starts, and removes these jobs through `@nestjs/schedule`. Both use `waitForCompletion: true`, so overlapping ticks of the same job are skipped. Nest logs scheduled errors and later ticks can retry. Explicit service calls propagate errors to the caller.
+
+On module destruction, the worker stops accepting new work and waits for active scheduled operations; Nest removes its timers during application shutdown. Await `app.close()` before closing externally owned resources. Manual service calls are owned and awaited by their callers.
+
+Every application instance using `registerJobs` or `registerJobsAsync` runs its own worker. Use the storage strategy's concurrency guarantees, such as PostgreSQL `SKIP LOCKED`, for processing across instances. API instances that only enqueue events should use `register` or `registerAsync`. There is no distributed cleanup leader.
+
+### Custom schedules
+
+Use `register` or `registerAsync` and declare application-owned Nest providers when you need different schedules, a different time zone, or only one of the jobs. This uses the same Nest scheduling API as any other application task:
 
 ```ts
-jobs: {
-  process: { cron: '*/5 * * * * *', timeZone: 'UTC' },
-  clean: { cron: '0 0 3 * * *', timeZone: 'Europe/London' },
+import { Injectable, Module } from '@nestjs/common';
+import { Cron, CronExpression, ScheduleModule } from '@nestjs/schedule';
+import { OutboxModule, OutboxService } from '@taleland/outbox-nestjs';
+import type { OutboxStorage, Publish } from '@taleland/outbox-core';
+
+@Injectable()
+class ApplicationOutboxJobs {
+  constructor(private readonly outbox: OutboxService) {}
+
+  @Cron(CronExpression.EVERY_5_SECONDS, { waitForCompletion: true })
+  async process(): Promise<void> {
+    await this.outbox.processOutbox();
+  }
+
+  @Cron('0 0 3 * * *', { timeZone: 'Europe/London', waitForCompletion: true })
+  async clean(): Promise<void> {
+    await this.outbox.cleanOutbox();
+  }
+}
+
+@Module({})
+export class MessagingModule {
+  static register<Transaction>(storage: OutboxStorage<Transaction>, publish: Publish) {
+    return {
+      module: MessagingModule,
+      imports: [ScheduleModule.forRoot(), OutboxModule.register({ storage, publish })],
+      providers: [ApplicationOutboxJobs],
+    };
+  }
 }
 ```
 
-- Omit `jobs` or set `jobs: false` to disable both jobs. You can invoke the services manually without initializing `ScheduleModule`.
-- Set `jobs: {}` to process every second and clean at midnight UTC. Set either `process: false` or `clean: false` to disable that job independently.
-- Jobs are registered as `outbox.process` and `outbox.clean` in Nest's `SchedulerRegistry`. These names must be available. Invalid schedules and conflicting names fail startup before any outbox timer starts.
-- Scheduled invocations use `waitForCompletion: true`; overlapping ticks of the same job are skipped. Errors are logged through Nest's logger and later ticks can retry. Explicit service calls still propagate errors to the caller.
-- On module destruction, jobs stop accepting new work, wait for active scheduled callbacks, and are removed from the registry. Manual service calls are owned and awaited by their callers.
-- Every enabled application instance runs its own jobs. Use the storage strategy's concurrency guarantees, such as PostgreSQL `SKIP LOCKED`, for processing across instances. There is no distributed cleanup leader; use `clean: false` on instances that should not perform cleanup.
+If your root module already imports `ScheduleModule.forRoot()`, omit it from `MessagingModule`. Application-owned jobs must also coordinate their active operations with resource shutdown; the built-in worker's drain hook only covers its own scheduled operations.
 
 See [Nest task scheduling](https://docs.nestjs.com/techniques/task-scheduling) for application scheduler setup. Delivery is at least once; the [core documentation](https://github.com/taleland/outbox/tree/main/packages/core) explains retry exhaustion, consumer deduplication, and retention.
 

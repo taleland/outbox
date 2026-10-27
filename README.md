@@ -36,7 +36,7 @@ Use [`@taleland/outbox-nestjs`](packages/nestjs) for `OutboxModule.register` / `
 pnpm add @taleland/outbox-nestjs @taleland/outbox-core @nestjs/schedule@^12.0.2
 ```
 
-See the [NestJS README](packages/nestjs/README.md) for a complete application example, async DI configuration, individual provider tokens, and shutdown behavior. Jobs are disabled by default; when enabled, the application initializes `ScheduleModule.forRoot()` once.
+See the [NestJS README](packages/nestjs/README.md) for a complete application example, async DI configuration, individual provider tokens, and shutdown behavior. Use `registerJobs` / `registerJobsAsync` to enable the built-in `@Cron` tasks; the application initializes `ScheduleModule.forRoot()` once. `register` / `registerAsync` provide services without background jobs.
 
 ## Commit business data and an event together
 
@@ -185,7 +185,7 @@ export async function runWorker(processOutbox: () => Promise<void>, signal: Abor
 }
 ```
 
-In NestJS, use `OutboxModule` from `@taleland/outbox-nestjs` to register providers and opt into scheduled jobs with `waitForCompletion: true`. Run cleanup less frequently, for example once a day. Stop polling, await any active batch, then close the database and transport during shutdown.
+In NestJS, use `OutboxModule` from `@taleland/outbox-nestjs` to register providers. Choose `registerJobs` or `registerJobsAsync` for Nest `@Cron` tasks with `waitForCompletion: true`. Run cleanup less frequently, for example once a day. Stop polling, await any active batch, then close the database and transport during shutdown.
 
 ## Delivery semantics and defaults
 

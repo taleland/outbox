@@ -1,5 +1,5 @@
 import { Module, type DynamicModule, type Provider } from '@nestjs/common';
-import { OutboxJobs } from './jobs.js';
+import { OutboxJobs } from './job/outbox-jobs.js';
 import { type OutboxModuleAsyncOptions, type OutboxModuleOptions } from './options.js';
 import { OutboxService } from './outbox.service.js';
 import { createProvider, withOutboxProvider, processOutboxProvider, cleanOutboxProvider } from './service/index.js';
@@ -19,6 +19,16 @@ export class OutboxModule {
     }, options.global, options.imports);
   }
 
+  static registerJobs<Transaction> (options: OutboxModuleOptions<Transaction>): DynamicModule {
+    const registration = this.register(options);
+    return { ...registration, providers: [...registration.providers ?? [], OutboxJobs] };
+  }
+
+  static registerJobsAsync<Transaction> (options: OutboxModuleAsyncOptions<Transaction>): DynamicModule {
+    const registration = this.registerAsync(options);
+    return { ...registration, providers: [...registration.providers ?? [], OutboxJobs] };
+  }
+
   private static configure (
     optionsProvider: Provider, global = false, imports: DynamicModule['imports'] = []
   ): DynamicModule {
@@ -28,7 +38,7 @@ export class OutboxModule {
       imports,
       providers: [
         optionsProvider, createProvider, withOutboxProvider, processOutboxProvider, cleanOutboxProvider,
-        OutboxService, OutboxJobs,
+        OutboxService,
       ],
       exports: [OutboxService, ...Object.values(OUTBOX_SYMBOLS)],
     };
