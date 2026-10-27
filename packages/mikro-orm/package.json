@@ -1,6 +1,6 @@
 {
   "name": "@taleland/outbox-mikro-orm",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "MikroORM PostgreSQL storage strategy for the Taleland transactional outbox.",
   "license": "Apache-2.0",
   "type": "module",

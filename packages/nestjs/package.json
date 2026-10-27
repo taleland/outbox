@@ -1,6 +1,6 @@
 {
   "name": "@taleland/outbox-nestjs",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "NestJS module for the Taleland transactional outbox with pluggable storage and publishers.",
   "license": "Apache-2.0",
   "type": "module",

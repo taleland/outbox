@@ -13,8 +13,6 @@ This pnpm monorepo contains four packages:
 
 The core depends on an `OutboxStorage<Transaction>` interface and a `Publish` callback. It has no dependency on MikroORM, NestJS, or a message broker. Applications choose their storage strategy, transport, and scheduler.
 
-**Initial review:** packages are at `0.0.0` and have not been released. The publishing workflow is disabled until `NPM_PUBLISH_ENABLED=true` is explicitly configured. Installation commands below describe the intended public packages after the first release.
-
 ## Requirements
 
 - Node.js 22.17 or later; ESM imports.
@@ -225,11 +223,11 @@ Commits and PR titles follow [Conventional Commits 1.0.0](AGENTS.md). The full s
 
 ## Release preparation
 
-All four packages use a fixed Changesets version group. The initial changeset proposes `1.0.0`; it has not been consumed or published.
+All four packages use a fixed Changesets version group, starting at `1.0.0`.
 
 For a future release, add a changeset with `pnpm changeset`. Prepare a separate version PR by running `pnpm version-packages` and `pnpm install --lockfile-only`, then review the manifests, changelogs, and lockfile. See [Changesets configuration](https://changesets.dev/guide/config) for the fixed-group behavior.
 
-After review and an explicit release decision, configure npm publishing for **all four** packages and the `taleland/outbox` repository's `publish.yml` workflow. The workflow uses npm CLI OIDC authentication with no `NPM_TOKEN`; package access and [Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) must be set up before enabling it. Public provenance also requires a public repository. Enabling the repository variable `NPM_PUBLISH_ENABLED=true` allows publishing versioned packages on `main` pushes or manual dispatch. Keep it unset during initial review.
+Configure npm Trusted Publishers for **all four** packages and the `taleland/outbox` repository's `publish.yml` workflow. The workflow uses npm CLI OIDC authentication with no `NPM_TOKEN`; package access and [Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) must be set up before enabling it. Public provenance also requires a public repository. Enabling the repository variable `NPM_PUBLISH_ENABLED=true` allows publishing versioned packages on `main` pushes or manual dispatch. Disable this variable to pause publishing.
 
 The release command rejects placeholder `0.0.0` versions and unconsumed changesets. It packs through pnpm to resolve `workspace:` dependency ranges, then publishes the tarballs with npm. Already-published versions are skipped, allowing a partially completed release to be retried. The workflow tags versions only after all packages have been published successfully.
 

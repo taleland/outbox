@@ -2,11 +2,9 @@
 
 NestJS integration for `@taleland/outbox-core`: an `OutboxModule`, injectable services, and optional scheduled processing and cleanup. The module accepts any `OutboxStorage<Transaction>` and `Publish` implementation. It has no dependency on MikroORM or a broker SDK.
 
-**Unreleased:** this package is part of [taleland/outbox](https://github.com/taleland/outbox). Publishing remains disabled while the packages are being reviewed.
-
 ## Install
 
-After the first release, install in a NestJS 12 application:
+Install in a NestJS 12 application:
 
 ```sh
 pnpm add @taleland/outbox-nestjs @taleland/outbox-core @nestjs/schedule@^12.0.2

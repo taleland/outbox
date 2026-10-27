@@ -4,11 +4,7 @@ A node-ts bus publisher adapter for `@taleland/outbox-core`. `createNodeTsPublis
 
 The adapter has no NestJS or ORM dependency. It accepts the `GetBus` provider from `@taleland/nodets-bus-core`, or an application-owned function returning an initialized node-ts bus instance.
 
-**Unreleased:** this package is part of [taleland/outbox](https://github.com/taleland/outbox). Publishing remains disabled during review.
-
 ## Install
-
-After the first release:
 
 ```sh
 pnpm add @taleland/outbox-nodets-bus @taleland/outbox-core @node-ts/bus-core@^1.3.3

@@ -2,11 +2,7 @@
 
 MikroORM 7 PostgreSQL storage strategy for `@taleland/outbox-core`. Business writes and outbox events share one transaction; concurrent publishing workers use `FOR UPDATE SKIP LOCKED`.
 
-**Unreleased:** this package is part of the initial review of [taleland/outbox](https://github.com/taleland/outbox).
-
 ## Install
-
-After the first release:
 
 ```sh
 pnpm add @taleland/outbox-core @taleland/outbox-mikro-orm @mikro-orm/core@^7.2.1 @mikro-orm/postgresql@^7.2.1
