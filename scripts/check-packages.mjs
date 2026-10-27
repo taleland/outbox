@@ -37,7 +37,7 @@ try {
     }
     console.log(`Verified ${manifest.name}@${manifest.version}: ${files.length} files`);
   }
-  assert.equal(manifests[1].dependencies['@taleland/outbox'], `^${manifests[0].version}`);
+  assert.equal(manifests[1].dependencies['@taleland/outbox-core'], `^${manifests[0].version}`);
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

@@ -1,5 +1,5 @@
 import { EntitySchema } from '@mikro-orm/core';
-import { OutboxMessage } from '@taleland/outbox';
+import { OutboxMessage } from '@taleland/outbox-core';
 
 export const OutboxSchema = new EntitySchema<OutboxMessage>({
   class: OutboxMessage,

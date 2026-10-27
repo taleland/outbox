@@ -1,6 +1,6 @@
 # @taleland/outbox-mikro-orm
 
-MikroORM 7 PostgreSQL storage strategy for `@taleland/outbox`. Business writes and outbox events share one transaction; concurrent publishing workers use `FOR UPDATE SKIP LOCKED`.
+MikroORM 7 PostgreSQL storage strategy for `@taleland/outbox-core`. Business writes and outbox events share one transaction; concurrent publishing workers use `FOR UPDATE SKIP LOCKED`.
 
 **Unreleased:** this package is part of the initial review of [taleland/outbox](https://github.com/taleland/outbox).
 
@@ -9,7 +9,7 @@ MikroORM 7 PostgreSQL storage strategy for `@taleland/outbox`. Business writes a
 After the first release:
 
 ```sh
-pnpm add @taleland/outbox @taleland/outbox-mikro-orm @mikro-orm/core@^7.2.1 @mikro-orm/postgresql@^7.2.1
+pnpm add @taleland/outbox-core @taleland/outbox-mikro-orm @mikro-orm/core@^7.2.1 @mikro-orm/postgresql@^7.2.1
 ```
 
 Use Node.js 22.17+ and matching MikroORM core/driver versions. The strategy is PostgreSQL-specific.
@@ -18,7 +18,7 @@ Use Node.js 22.17+ and matching MikroORM core/driver versions. The strategy is P
 
 ```ts
 import { MikroORM } from '@mikro-orm/postgresql';
-import { createWithOutbox, createProcessOutbox } from '@taleland/outbox';
+import { createWithOutbox, createProcessOutbox } from '@taleland/outbox-core';
 import { MikroOrmOutboxStorage, OutboxSchema } from '@taleland/outbox-mikro-orm';
 
 const orm = await MikroORM.init({

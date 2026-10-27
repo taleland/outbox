@@ -1,5 +1,5 @@
 ---
-"@taleland/outbox": major
+"@taleland/outbox-core": major
 "@taleland/outbox-mikro-orm": major
 ---
 

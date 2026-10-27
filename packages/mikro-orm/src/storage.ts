@@ -1,6 +1,6 @@
 import { LockMode, TransactionPropagation } from '@mikro-orm/core';
 import { type EntityManager } from '@mikro-orm/postgresql';
-import { type BatchQuery, type OutboxBatch, OutboxMessage, type OutboxStorage } from '@taleland/outbox';
+import { type BatchQuery, type OutboxBatch, OutboxMessage, type OutboxStorage } from '@taleland/outbox-core';
 
 export class MikroOrmOutboxStorage implements OutboxStorage<EntityManager> {
   constructor (private readonly entityManager: EntityManager) {}

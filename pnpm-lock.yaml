@@ -31,7 +31,7 @@ importers:
 
   packages/mikro-orm:
     dependencies:
-      '@taleland/outbox':
+      '@taleland/outbox-core':
         specifier: workspace:^
         version: link:../core
     devDependencies:

@@ -6,7 +6,7 @@ This pnpm monorepo contains two packages:
 
 | Package | Responsibility |
 | --- | --- |
-| [`@taleland/outbox`](packages/core) | ORM-independent event creation, unit of work, publication, retries, and retention. No runtime dependencies. |
+| [`@taleland/outbox-core`](packages/core) | ORM-independent event creation, unit of work, publication, retries, and retention. No runtime dependencies. |
 | [`@taleland/outbox-mikro-orm`](packages/mikro-orm) | PostgreSQL persistence, entity schema, transactions, and concurrent worker locking through MikroORM 7. |
 
 The core depends on an `OutboxStorage<Transaction>` interface and a `Publish` callback. It has no dependency on MikroORM, NestJS, or a message broker. Applications choose their storage strategy, transport, and scheduler.
@@ -22,10 +22,10 @@ The core depends on an `OutboxStorage<Transaction>` interface and a `Publish` ca
 ## Install
 
 ```sh
-pnpm add @taleland/outbox @taleland/outbox-mikro-orm @mikro-orm/core@^7.2.1 @mikro-orm/postgresql@^7.2.1
+pnpm add @taleland/outbox-core @taleland/outbox-mikro-orm @mikro-orm/core@^7.2.1 @mikro-orm/postgresql@^7.2.1
 ```
 
-For another database or ORM, install only `@taleland/outbox` and implement the [storage contract](packages/core/README.md#implementing-a-storage-strategy).
+For another database or ORM, install only `@taleland/outbox-core` and implement the [storage contract](packages/core/README.md#implementing-a-storage-strategy).
 
 ## Commit business data and an event together
 
@@ -35,7 +35,7 @@ Register `OutboxSchema` alongside your application entities, including in the Mi
 import { randomUUID } from 'node:crypto';
 import { EntitySchema } from '@mikro-orm/core';
 import { MikroORM } from '@mikro-orm/postgresql';
-import { createWithOutbox, createProcessOutbox, createCleanOutbox } from '@taleland/outbox';
+import { createWithOutbox, createProcessOutbox, createCleanOutbox } from '@taleland/outbox-core';
 import { MikroOrmOutboxStorage, OutboxSchema } from '@taleland/outbox-mikro-orm';
 
 class Order {
@@ -104,7 +104,7 @@ Events require a nonempty `$name`, a nonnegative integer `$version`, and a nonem
 Use `createCreate` when your application already owns a transaction. This joins the supplied transaction rather than opening another one.
 
 ```ts
-import { createCreate } from '@taleland/outbox';
+import { createCreate } from '@taleland/outbox-core';
 
 const createOutbox = createCreate(storage);
 await orm.em.fork().transactional(async transaction => {
@@ -126,8 +126,8 @@ For an application using `@taleland/nodets-bus-core`, obtain the configured `Get
 
 ```ts
 import type { GetBus } from '@taleland/nodets-bus-core';
-import { createProcessOutbox } from '@taleland/outbox';
-import type { OutboxStorage } from '@taleland/outbox';
+import { createProcessOutbox } from '@taleland/outbox-core';
+import type { OutboxStorage } from '@taleland/outbox-core';
 
 export function createBusWorker<Transaction>(storage: OutboxStorage<Transaction>, getBus: GetBus) {
   return createProcessOutbox(storage, async (event, { queueName, outboxId }) => {

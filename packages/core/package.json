@@ -1,5 +1,5 @@
 {
-  "name": "@taleland/outbox",
+  "name": "@taleland/outbox-core",
   "version": "0.0.0",
   "description": "ORM-independent transactional outbox with pluggable storage and publication.",
   "license": "Apache-2.0",

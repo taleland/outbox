@@ -1,4 +1,4 @@
-# @taleland/outbox
+# @taleland/outbox-core
 
 ORM-independent transactional outbox primitives for Node.js 22.17+. No runtime dependencies, ORM decorators, framework providers, or broker client are required.
 
@@ -9,14 +9,14 @@ ORM-independent transactional outbox primitives for Node.js 22.17+. No runtime d
 After the first release:
 
 ```sh
-pnpm add @taleland/outbox
+pnpm add @taleland/outbox-core
 ```
 
 Compose the core with a storage strategy and a publisher. In this example `storage` implements `OutboxStorage<Transaction>` and `publish` implements `Publish`:
 
 ```ts
-import { createWithOutbox, createProcessOutbox, createCleanOutbox } from '@taleland/outbox';
-import type { OutboxStorage, Publish } from '@taleland/outbox';
+import { createWithOutbox, createProcessOutbox, createCleanOutbox } from '@taleland/outbox-core';
+import type { OutboxStorage, Publish } from '@taleland/outbox-core';
 
 export function createOutboxServices<Transaction>(storage: OutboxStorage<Transaction>, publish: Publish) {
   return {
@@ -45,7 +45,7 @@ See the [complete PostgreSQL example, bus adapter, scheduling, and delivery sema
 ## Implementing a storage strategy
 
 ```ts
-import type { OutboxStorage } from '@taleland/outbox';
+import type { OutboxStorage } from '@taleland/outbox-core';
 
 // Your transaction type is inferred throughout createCreate and createWithOutbox.
 const storage: OutboxStorage<YourTransaction> = yourStorageImplementation;

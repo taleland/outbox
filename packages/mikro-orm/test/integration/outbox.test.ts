@@ -4,7 +4,7 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 import { EntitySchema, type MikroORM as CoreMikroORM } from '@mikro-orm/core';
 import { MikroORM, type PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { createCreate, createWithOutbox, createProcessOutbox, createCleanOutbox, OutboxMessage } from '@taleland/outbox';
+import { createCreate, createWithOutbox, createProcessOutbox, createCleanOutbox, OutboxMessage } from '@taleland/outbox-core';
 import { MikroOrmOutboxStorage, OutboxSchema } from '../../src/index.js';
 
 class Order {

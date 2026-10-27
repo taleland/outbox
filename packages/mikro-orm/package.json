@@ -39,7 +39,7 @@
     "test:integration": "node --test dist/test/integration/*.test.js"
   },
   "dependencies": {
-    "@taleland/outbox": "workspace:^"
+    "@taleland/outbox-core": "workspace:^"
   },
   "peerDependencies": {
     "@mikro-orm/core": "^7.2.1",
