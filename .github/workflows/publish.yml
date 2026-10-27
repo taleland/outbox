@@ -17,7 +17,7 @@ jobs:
     name: Release to npm
     if: vars.NPM_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     permissions:
       contents: write
       id-token: write
