@@ -1,5 +1,5 @@
 import { writeFileSync } from 'node:fs';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 import semanticRelease from 'semantic-release';
 import { releaseConfig } from '../release-config.mjs';
@@ -11,7 +11,7 @@ const result = await semanticRelease({
   repositoryUrl,
   dryRun: true,
   ci: false,
-  plugins: [fileURLToPath(new URL('../release-commits.mjs', import.meta.url))],
+  plugins: [config.plugins[0]],
   generateNotes: async () => 'Fixture release notes',
 });
 writeFileSync(output, JSON.stringify(result ? result.nextRelease.version : false));
