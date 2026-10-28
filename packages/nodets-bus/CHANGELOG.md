@@ -1,12 +1,7 @@
 # @taleland/outbox-nodets-bus
 
-## 1.0.0
+## 1.0.0 (2026-10-27)
 
-### Major Changes
+### Features
 
-- fec72d0: Add an ORM- and transport-independent transactional outbox with MikroORM PostgreSQL and NestJS integration packages and a node-ts bus publisher adapter, with atomic event creation, concurrent workers, delayed retries, and delivered-message retention.
-
-### Patch Changes
-
-- Updated dependencies [fec72d0]
-  - @taleland/outbox-core@1.0.0
+* add NestJS integration and node-ts publisher ([#2](https://github.com/taleland/outbox/issues/2)) ([9b17090](https://github.com/taleland/outbox/commit/9b17090e0c9dc4252513e39209b44f5dacd2a5b5))

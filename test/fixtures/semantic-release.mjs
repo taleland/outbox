@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 import semanticRelease from 'semantic-release';
-import { releaseConfig } from '../release-config.mjs';
+import { releaseConfig } from '../../release.config.shared.js';
 
 const [repositoryUrl, output] = process.argv.slice(2);
 const config = releaseConfig(pathToFileURL(join(process.cwd(), 'release.config.js')));

@@ -5,10 +5,8 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { recoveryNotes } from '../recovery-notes.mjs';
-import { waitForVersion } from '../registry-ready.mjs';
 
-const root = fileURLToPath(new URL('../../', import.meta.url));
+const root = fileURLToPath(new URL('../', import.meta.url));
 
 test('real semantic-release independently analyzes each package since its own tag', { timeout: 120000 }, () => {
   const temporary = mkdtempSync(join(tmpdir(), 'independent-releases-'));
@@ -36,7 +34,7 @@ test('real semantic-release independently analyzes each package since its own ta
     git(['add', 'package.json', 'packages']); git(['commit', '-m', 'feat: initial packages']);
     for (const directory of ['core', 'nestjs', 'mikro-orm']) git(['tag', `@fixture/${directory}@1.0.0`]);
     git(['push', 'origin', 'main', '--tags']);
-    const worker = join(root, 'scripts/test/semantic-worker.mjs');
+    const worker = join(root, 'test/fixtures/semantic-release.mjs');
     const plan = directory => {
       const output = join(temporary, `${directory}.json`);
       execFileSync(process.execPath, [worker, remote, output], {
@@ -72,19 +70,4 @@ test('real semantic-release independently analyzes each package since its own ta
     assert.equal(plan('core'), '2.0.0');
     assert.equal(plan('nestjs'), '1.0.1', 'a core major must not cascade into Nest');
   } finally { rmSync(temporary, { recursive: true, force: true }); }
-});
-
-test('recovery uses only the tagged version notes', () => {
-  const log = '# Package\n\n## [1.2.0](https://example.test) (2026-01-01)\n\n### Features\n\n- New\n\n## 1.1.0\n\n- Old';
-  assert.match(recoveryNotes(log, '1.2.0'), /New/);
-  assert.doesNotMatch(recoveryNotes(log, '1.2.0'), /Old/);
-  assert.throws(() => recoveryNotes(log, '1.0.0'), /Missing/);
-});
-
-test('registry readiness waits for exact availability and fails on timeout or authentication errors', async () => {
-  let calls = 0;
-  await waitForVersion('pkg@1.0.0', { check: () => ++calls === 3, wait: async () => {}, attempts: 3 });
-  assert.equal(calls, 3);
-  await assert.rejects(waitForVersion('pkg@1.0.0', { check: () => false, wait: async () => {}, attempts: 2 }), /timed out/);
-  await assert.rejects(waitForVersion('pkg@1.0.0', { check: () => { throw new Error('Unauthorized'); } }), /Unauthorized/);
 });

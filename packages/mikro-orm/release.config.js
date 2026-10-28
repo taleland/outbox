@@ -1,3 +1,3 @@
-import { releaseConfig } from '../../scripts/release-config.mjs';
+import { releaseConfig } from '../../release.config.shared.js';
 
 export default releaseConfig(import.meta.url);

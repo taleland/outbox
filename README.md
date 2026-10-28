@@ -229,17 +229,13 @@ Source changes, package TypeScript configuration, and published manifest fields 
 
 Internal dependencies use explicit supported npm ranges. Root pnpm overrides link local packages for development without changing those published ranges. To adopt an incompatible core major, update the adapter's code and dependency range explicitly. Never widen a published range automatically just because core was released.
 
-On `main`, CI runs lint, build, tests, and tarball checks before sequential releases (core first). Standard semantic-release plugins update package versions and changelogs, commit them, publish to npm, and create GitHub Releases. Publication waits for registry visibility before proceeding. There are no Changeset files or manual version PRs.
+On `main`, CI runs lint, build, tests, and tarball checks before sequential package releases. Standard semantic-release plugins update package versions and changelogs, commit them, publish to npm, and create GitHub Releases. There are no Changeset files or manual version PRs.
 
-Configure npm Trusted Publishers for every package with repository `taleland/outbox` and workflow `publish.yml`, then enable `NPM_PUBLISH_ENABLED=true` when publication is approved. Publishing uses npm OIDC with `id-token: write`; no npm token is required. Keep the variable disabled during initial setup. A recreated GitHub repository has a new identity, so its Trusted Publishers must be configured again.
+Configure npm Trusted Publishers for every package with repository `taleland/outbox` and workflow `publish.yml`, then enable `NPM_PUBLISH_ENABLED=true` when publication is approved. Publishing uses npm OIDC with `id-token: write`; no npm token is required. Keep the variable disabled during initial setup.
 
-`pnpm release:dry-run` previews versions using the same configuration; semantic-release still verifies Git/npm authentication. The release tests use local Git fixtures and never publish anything.
+`pnpm release:dry-run` previews versions using the same configuration; semantic-release still verifies Git/npm authentication. The release tests use local Git fixtures and never publish anything. pnpm runs semantic-release sequentially for the workspace packages; no custom publishing or recovery runner is used. The only custom release plugin filters out changes to tests, documentation, and development-only manifest fields before delegating to the official commit analyzer and release-notes generator.
 
-### Recovering partial publication
-
-Semantic-release creates a tag before npm publication. If publication or registry propagation fails, the next release run stops at the incomplete tag instead of inventing another version. Dispatch `publish.yml` on `main` with `recover_tag` set to that exact package tag. Recovery checks out the immutable tagged snapshot, rebuilds it, skips an npm version already present, and creates a missing GitHub Release. Authentication errors remain errors. After recovery, dispatch the normal workflow with an empty `recover_tag` to continue other packages.
-
-See the [changelog index](CHANGELOG.md) and [GitHub Releases](https://github.com/taleland/outbox/releases).
+Package changelogs: [core](packages/core/CHANGELOG.md), [MikroORM](packages/mikro-orm/CHANGELOG.md), [NestJS](packages/nestjs/CHANGELOG.md), and [node-ts bus](packages/nodets-bus/CHANGELOG.md). See [GitHub Releases](https://github.com/taleland/outbox/releases) for the same generated notes.
 
 ## License
 

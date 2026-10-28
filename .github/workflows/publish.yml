@@ -4,11 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      recover_tag:
-        description: 'Optional exact package tag to recover after a partial release'
-        type: string
-        required: false
 
 permissions:
   contents: read
@@ -28,7 +23,6 @@ jobs:
       id-token: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NPM_PUBLISH_ENABLED: ${{ vars.NPM_PUBLISH_ENABLED }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,10 +43,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Release changed packages
-        if: inputs.recover_tag == ''
         run: pnpm release
-      - name: Recover an incomplete tagged release
-        if: inputs.recover_tag != ''
-        env:
-          RECOVER_TAG: ${{ inputs.recover_tag }}
-        run: pnpm release:recover "$RECOVER_TAG"
