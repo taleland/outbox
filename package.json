@@ -7,7 +7,7 @@
     "node": ">=22.17.0"
   },
   "scripts": {
-    "build": "pnpm -r run build",
+    "build": "pnpm --filter @taleland/outbox-core run build && pnpm -r --filter '!@taleland/outbox-core' run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "pnpm run test:release && pnpm run test:unit && pnpm run test:integration",
