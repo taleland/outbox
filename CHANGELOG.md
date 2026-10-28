@@ -7,4 +7,4 @@ This monorepo maintains release notes for each package:
 - [@taleland/outbox-nestjs](packages/nestjs/CHANGELOG.md)
 - [@taleland/outbox-nodets-bus](packages/nodets-bus/CHANGELOG.md)
 
-Changesets generates these changelogs when preparing version PRs. After npm publication succeeds, the release workflow pushes package tags and creates a [GitHub Release](https://github.com/taleland/outbox/releases) for each package version using its changelog entry. Retrying publication also fills in missing releases without republishing existing package versions.
+Semantic-release maintains each package's changelog and creates its own GitHub Release. Versions advance independently; packages without releasable changes are not republished.

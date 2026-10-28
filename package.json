@@ -14,18 +14,25 @@
     "test:unit": "pnpm -r --if-present run test:unit",
     "test:integration": "pnpm -r --if-present run test:integration",
     "pack:check": "node scripts/check-packages.mjs",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
     "release": "node scripts/release.mjs",
     "test:release": "node --test scripts/test/*.test.mjs",
-    "release:github": "node scripts/github-releases.mjs"
+    "release:dry-run": "node scripts/release.mjs --dry-run",
+    "release:recover": "node scripts/recover-release.mjs"
   },
   "devDependencies": {
-    "@changesets/cli": "3.0.3",
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/git": "10.0.1",
+    "@semantic-release/github": "12.0.6",
+    "@semantic-release/npm": "13.1.5",
+    "@semantic-release/release-notes-generator": "14.1.0",
     "@taleland/tsconfig": "^1.0.0",
     "@types/node": "^26.6.3",
+    "conventional-changelog-conventionalcommits": "9.3.0",
     "eslint": "^10.4.0",
     "neostandard": "^0.14.1",
+    "semantic-release": "25.0.3",
+    "semantic-release-monorepo": "8.0.2",
     "typescript": "6.0.2"
   }
 }

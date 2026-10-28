@@ -4,3 +4,7 @@ packages:
 onlyBuiltDependencies:
   - cpu-features
   - ssh2
+
+# Develop against local core; published manifests retain their explicit supported range.
+overrides:
+  '@taleland/outbox-core': 'workspace:*'

@@ -1,40 +1,25 @@
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isPublished, publishPackage } from './npm-publication.mjs';
 
-if (process.env.NPM_PUBLISH_ENABLED !== 'true') {
-  throw new Error('Publishing is disabled. Complete the release setup before enabling NPM_PUBLISH_ENABLED.');
-}
 const root = fileURLToPath(new URL('../', import.meta.url));
-const packages = ['core', 'mikro-orm', 'nestjs', 'nodets-bus'].map(directory => ({
-  directory: join(root, 'packages', directory),
-  manifest: JSON.parse(readFileSync(join(root, 'packages', directory, 'package.json'), 'utf8')),
-}));
-if (packages.some(({ manifest }) => manifest.version === '0.0.0')) {
-  throw new Error('Initial packages are not versioned. Prepare and review a version PR first.');
-}
-if (readdirSync(join(root, '.changeset')).some(name => name.endsWith('.md') && name !== 'README.md')) {
-  throw new Error('Unconsumed changesets remain. Run pnpm version-packages and commit the result first.');
-}
-const temporary = mkdtempSync(join(tmpdir(), 'outbox-release-'));
-try {
-  for (const { directory, manifest } of packages) {
-    const specifier = `${manifest.name}@${manifest.version}`;
-    if (isPublished(specifier)) {
-      console.log(`Already published: ${specifier}`);
-      continue;
+const dryRun = process.argv.includes('--dry-run');
+if (!dryRun && process.env.NPM_PUBLISH_ENABLED !== 'true') throw new Error('Publishing is disabled');
+if (process.argv.slice(2).some(arg => arg !== '--dry-run')) throw new Error('Only --dry-run is supported');
+for (const directory of ['core', 'mikro-orm', 'nestjs', 'nodets-bus']) {
+  const cwd = join(root, 'packages', directory);
+  const { name } = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'));
+  if (!dryRun) {
+    const tag = execFileSync('git', ['tag', '--merged', 'HEAD', '--sort=-version:refname', '--list', `${name}@*`], { cwd, encoding: 'utf8' }).trim().split('\n')[0];
+    if (tag) {
+      const result = spawnSync('gh', ['api', `repos/${process.env.GITHUB_REPOSITORY}/releases/tags/${encodeURIComponent(tag)}`], { encoding: 'utf8' });
+      if (result.error) throw result.error;
+      if (result.status !== 0) {
+        if (!result.stderr.includes('HTTP 404')) throw new Error(result.stderr);
+        throw new Error(`Incomplete release ${tag}. Run the publish workflow with recover_tag=${tag} before releasing new versions.`);
+      }
     }
-    const output = join(temporary, manifest.name.replace('/', '-'));
-    mkdirSync(output);
-    execFileSync('pnpm', ['pack', '--pack-destination', output], { cwd: directory, stdio: 'inherit' });
-    const archive = readdirSync(output).find(name => name.endsWith('.tgz'));
-    if (!archive) throw new Error(`No tarball for ${specifier}`);
-    // npm CLI handles OIDC; pnpm has already resolved workspace: dependencies in the tarball.
-    await publishPackage(specifier, join(output, archive));
   }
-} finally {
-  rmSync(temporary, { recursive: true, force: true });
+  execFileSync('pnpm', ['exec', 'semantic-release', ...(dryRun ? ['--dry-run'] : [])], { cwd, stdio: 'inherit' });
 }

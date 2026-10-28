@@ -221,20 +221,26 @@ Build before running tests: tests execute the compiled JavaScript. CI runs the s
 
 Commits and PR titles follow [Conventional Commits 1.0.0](AGENTS.md). The full specification is included locally in `AGENTS.md`.
 
-## Release preparation
+## Independent releases
 
-All four packages use a fixed Changesets version group, starting at `1.0.0`.
+Each package has its own version, `CHANGELOG.md`, Git tag (`@taleland/outbox-core@1.2.3`), and GitHub Release. `semantic-release-monorepo` filters commits since that package's last tag; the shared release plugins analyze Conventional Commits and publish only affected packages. A core release does not automatically bump the adapters.
 
-For a future release, add a changeset with `pnpm changeset`. Prepare a separate version PR by running `pnpm version-packages` and `pnpm install --lockfile-only`, then review the manifests, changelogs, and lockfile. See [Changesets configuration](https://changesets.dev/guide/config) for the fixed-group behavior.
+Source changes, package TypeScript configuration, and published manifest fields participate in release analysis. `fix`/`perf` produce patches, `feat` produces minor versions, and breaking changes produce majors. Runtime dependency updates using `chore(deps)` or `build(deps)` produce patches. Documentation, tests, CI, version-only commits, and development-only dependencies do not trigger releases. Commit scopes are descriptive: changed file paths decide which package is affected.
 
-Configure npm Trusted Publishers for **all four** packages and the `taleland/outbox` repository's `publish.yml` workflow. The workflow uses npm CLI OIDC authentication with no `NPM_TOKEN`; package access and [Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) must be set up before enabling it. Public provenance also requires a public repository. Enabling the repository variable `NPM_PUBLISH_ENABLED=true` allows publishing versioned packages on `main` pushes or manual dispatch. Disable this variable to pause publishing.
+Internal dependencies use explicit supported npm ranges. Root pnpm overrides link local packages for development without changing those published ranges. To adopt an incompatible core major, update the adapter's code and dependency range explicitly. Never widen a published range automatically just because core was released.
 
-The release command rejects placeholder `0.0.0` versions and unconsumed changesets. It packs through pnpm to resolve `workspace:` dependency ranges, then publishes the tarballs with npm. Already-published versions are skipped, allowing a partially completed release to be retried. After each publish, the release command waits for the version to become readable in the npm registry before proceeding to dependent packages. A duplicate-version response is recoverable only after the expected version becomes readable; authentication errors still fail the release. The workflow tags versions only after all packages have been published successfully.
+On `main`, CI runs lint, build, tests, and tarball checks before sequential releases (core first). Standard semantic-release plugins update package versions and changelogs, commit them, publish to npm, and create GitHub Releases. Publication waits for registry visibility before proceeding. There are no Changeset files or manual version PRs.
+
+Configure npm Trusted Publishers for every package with repository `taleland/outbox` and workflow `publish.yml`, then enable `NPM_PUBLISH_ENABLED=true` when publication is approved. Publishing uses npm OIDC with `id-token: write`; no npm token is required. Keep the variable disabled during initial setup. A recreated GitHub repository has a new identity, so its Trusted Publishers must be configured again.
+
+`pnpm release:dry-run` previews versions using the same configuration; semantic-release still verifies Git/npm authentication. The release tests use local Git fixtures and never publish anything.
+
+### Recovering partial publication
+
+Semantic-release creates a tag before npm publication. If publication or registry propagation fails, the next release run stops at the incomplete tag instead of inventing another version. Dispatch `publish.yml` on `main` with `recover_tag` set to that exact package tag. Recovery checks out the immutable tagged snapshot, rebuilds it, skips an npm version already present, and creates a missing GitHub Release. Authentication errors remain errors. After recovery, dispatch the normal workflow with an empty `recover_tag` to continue other packages.
+
+See the [changelog index](CHANGELOG.md) and [GitHub Releases](https://github.com/taleland/outbox/releases).
 
 ## License
 
 [Apache-2.0](LICENSE).
-
-## Changelogs and GitHub Releases
-
-See the [changelog index](CHANGELOG.md) for per-package history. Successful publication creates package tags and [GitHub Releases](https://github.com/taleland/outbox/releases) from the corresponding changelog entries.

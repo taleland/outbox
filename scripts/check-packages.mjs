@@ -43,7 +43,8 @@ try {
     console.log(`Verified ${manifest.name}@${manifest.version}: ${files.length} files`);
   }
   for (const manifest of manifests.slice(1)) {
-    assert.equal(manifest.dependencies['@taleland/outbox-core'], `^${manifests[0].version}`);
+    const source = JSON.parse(readFileSync(join(root, manifest.repository.directory, 'package.json'), 'utf8'));
+    assert.equal(manifest.dependencies['@taleland/outbox-core'], source.dependencies['@taleland/outbox-core']);
   }
   assert.ok(!Object.keys({ ...manifests[2].dependencies, ...manifests[2].peerDependencies }).some(name => name.startsWith('@mikro-orm/')));
 } finally {

@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      recover_tag:
+        description: 'Optional exact package tag to recover after a partial release'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -14,13 +19,16 @@ concurrency:
 
 jobs:
   publish:
-    name: Release to npm
+    name: Release changed packages
     if: vars.NPM_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
       contents: write
       id-token: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NPM_PUBLISH_ENABLED: ${{ vars.NPM_PUBLISH_ENABLED }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,17 +44,15 @@ jobs:
       - run: pnpm build
       - run: pnpm test
       - run: pnpm pack:check
-      - name: Publish versioned packages
-        env:
-          NPM_PUBLISH_ENABLED: ${{ vars.NPM_PUBLISH_ENABLED }}
-        run: pnpm release
-      - name: Tag published versions
+      - name: Configure release commits
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          pnpm exec changeset tag
-          git push origin --tags
-      - name: Create GitHub Releases from package changelogs
+      - name: Release changed packages
+        if: inputs.recover_tag == ''
+        run: pnpm release
+      - name: Recover an incomplete tagged release
+        if: inputs.recover_tag != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm release:github
+          RECOVER_TAG: ${{ inputs.recover_tag }}
+        run: pnpm release:recover "$RECOVER_TAG"
