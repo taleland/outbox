@@ -63,11 +63,11 @@ importers:
         version: link:../core
     devDependencies:
       '@mikro-orm/core':
-        specifier: 7.2.1
-        version: 7.2.1
+        specifier: 7.2.5
+        version: 7.2.5
       '@mikro-orm/postgresql':
         specifier: 7.2.5
-        version: 7.2.5(@mikro-orm/core@7.2.1)
+        version: 7.2.5(@mikro-orm/core@7.2.5)
       testcontainers:
         specifier: ^12.0.0
         version: 12.2.1
@@ -239,8 +239,8 @@ packages:
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
 
-  '@mikro-orm/core@7.2.1':
-    resolution: {integrity: sha512-+gtJoScbin/C3wPItSZkj5vlMTq/LphBLIxHyi5brCbeA6VDcYuoMopiqoFUMQxdhXXrZlKNIHXGrhb8r3biVg==}
+  '@mikro-orm/core@7.2.5':
+    resolution: {integrity: sha512-YF2q2Druxw4PQf/DoN1jZgYZdWfgQUWZWEapXIs0Oc/mC5HvD21nVncruDz2qMitmihro1oPhb9gI4LR5u8BEw==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
       dataloader: 2.2.3
@@ -446,10 +446,6 @@ packages:
     engines: {node: '>=20.8.1'}
     peerDependencies:
       semantic-release: '>=20.1.0'
-
-  '@semantic-release/error@3.0.0':
-    resolution: {integrity: sha512-5hiM4Un+tpl4cKw3lV4UgzJj+SmfNIDCLLw0TepzQxz9ZGV5ixnqkzIVF+3tp0ZHgcMKE+VNGHJjEeyFG2dcSw==}
-    engines: {node: '>=14.17'}
 
   '@semantic-release/error@4.0.0':
     resolution: {integrity: sha512-mgdxrHTLOjOddRVYIYDo0fR3/v61GNN1YGkfbrjuIKg/uMgCd+Qzo3UAXJ+woLQQpos4pl5Esuw5A7AoNlzjUQ==}
@@ -2861,12 +2857,12 @@ snapshots:
 
   '@lukeed/csprng@1.1.0': {}
 
-  '@mikro-orm/core@7.2.1': {}
+  '@mikro-orm/core@7.2.5': {}
 
-  '@mikro-orm/postgresql@7.2.5(@mikro-orm/core@7.2.1)':
+  '@mikro-orm/postgresql@7.2.5(@mikro-orm/core@7.2.5)':
     dependencies:
-      '@mikro-orm/core': 7.2.1
-      '@mikro-orm/sql': 7.2.5(@mikro-orm/core@7.2.1)
+      '@mikro-orm/core': 7.2.5
+      '@mikro-orm/sql': 7.2.5(@mikro-orm/core@7.2.5)
       kysely: 0.29.6
       pg: 8.23.1
       pg-cursor: 2.22.1(pg@8.23.1)
@@ -2876,9 +2872,9 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@mikro-orm/sql@7.2.5(@mikro-orm/core@7.2.1)':
+  '@mikro-orm/sql@7.2.5(@mikro-orm/core@7.2.5)':
     dependencies:
-      '@mikro-orm/core': 7.2.1
+      '@mikro-orm/core': 7.2.5
       kysely: 0.29.6
 
   '@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)':
@@ -3074,8 +3070,6 @@ snapshots:
       semantic-release: 25.0.3(typescript@6.0.2)
     transitivePeerDependencies:
       - supports-color
-
-  '@semantic-release/error@3.0.0': {}
 
   '@semantic-release/error@4.0.0': {}
 
