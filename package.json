@@ -24,7 +24,7 @@
     "@semantic-release/git": "10.0.1",
     "@semantic-release/github": "12.0.6",
     "@semantic-release/npm": "13.1.5",
-    "@semantic-release/release-notes-generator": "14.1.0",
+    "@semantic-release/release-notes-generator": "14.1.1",
     "@taleland/tsconfig": "^1.0.0",
     "@types/node": "^26.6.3",
     "conventional-changelog-conventionalcommits": "9.3.0",
