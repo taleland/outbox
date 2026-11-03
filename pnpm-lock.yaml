@@ -66,8 +66,8 @@ importers:
         specifier: 7.2.5
         version: 7.2.5
       '@mikro-orm/postgresql':
-        specifier: 7.2.5
-        version: 7.2.5(@mikro-orm/core@7.2.5)
+        specifier: 7.2.6
+        version: 7.2.6(@mikro-orm/core@7.2.5)
       testcontainers:
         specifier: ^12.0.0
         version: 12.2.1
@@ -248,17 +248,17 @@ packages:
       dataloader:
         optional: true
 
-  '@mikro-orm/postgresql@7.2.5':
-    resolution: {integrity: sha512-2mDdd3DBQLxtLIyzkNahwxeZdDeSbQjwnp26JRnElXkq6u/X5AUwBagbrf/iu9m3a83GvkP6xxOnGL4bPeAJNA==}
+  '@mikro-orm/postgresql@7.2.6':
+    resolution: {integrity: sha512-SuIglvzJmOVdNHk42YFrSBf6LwBj12S3LiCMU1+5xmVxSXAgH00h7ZNjWWhMYK6JxgrEx4kxSRECcgEjk2i9ow==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.2.5
+      '@mikro-orm/core': 7.2.6
 
-  '@mikro-orm/sql@7.2.5':
-    resolution: {integrity: sha512-sXctGMJ/QKeugdX3xKltKXVeHavkuGuo/LhH0In1htw+uylAXjyzxzsO8rTb/sS+Ay3tZaaB/Y2eK5dCl4ZAVw==}
+  '@mikro-orm/sql@7.2.6':
+    resolution: {integrity: sha512-c0x36YIJAwD/p0Br2g/OmmPKByn4ieMusYJKWkLcN6ozppevOqOoY3R/HyLZZhLFtjtBvMOCGdQtCPMfkE18LQ==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.2.5
+      '@mikro-orm/core': 7.2.6
 
   '@nestjs/common@12.3.2':
     resolution: {integrity: sha512-XPNu75rXiDBuQ/EECiA0urFJ7bAycA1/xTrKnKct5vEF7A5FE0LyOem/EhRZI0Cq1xAGPDuTB89sFMqeSPWjzQ==}
@@ -1545,8 +1545,8 @@ packages:
   keyv@5.6.0:
     resolution: {integrity: sha512-CYDD3SOtsHtyXeEORYRx2qBtpDJFjRTGXUtmNEMGyzYOKj1TE3tycdlho7kA1Ufx9OYWZzg52QFBGALTirzDSw==}
 
-  kysely@0.29.6:
-    resolution: {integrity: sha512-hHaB8C/rfzDDtr/t8YZwxAuPJTT0zHyaPoVzcXwDYhYNAgH/4sIfVhi/XLLIY+bL/FqaIJnjATDbi8ObSELmxg==}
+  kysely@0.29.7:
+    resolution: {integrity: sha512-fmIq+7kv4WbFm2tcfznRzikqB4cuNpgZ40PSU2fAJ2/OO5XhojqnTPrmgrCjYSRJVwBln03XcRXJGnw9H099IQ==}
     engines: {node: '>=22.0.0'}
 
   lazystream@1.0.1:
@@ -2862,11 +2862,11 @@ snapshots:
 
   '@mikro-orm/core@7.2.5': {}
 
-  '@mikro-orm/postgresql@7.2.5(@mikro-orm/core@7.2.5)':
+  '@mikro-orm/postgresql@7.2.6(@mikro-orm/core@7.2.5)':
     dependencies:
       '@mikro-orm/core': 7.2.5
-      '@mikro-orm/sql': 7.2.5(@mikro-orm/core@7.2.5)
-      kysely: 0.29.6
+      '@mikro-orm/sql': 7.2.6(@mikro-orm/core@7.2.5)
+      kysely: 0.29.7
       pg: 8.23.1
       pg-cursor: 2.22.1(pg@8.23.1)
       postgres-array: 3.0.4
@@ -2875,10 +2875,10 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@mikro-orm/sql@7.2.5(@mikro-orm/core@7.2.5)':
+  '@mikro-orm/sql@7.2.6(@mikro-orm/core@7.2.5)':
     dependencies:
       '@mikro-orm/core': 7.2.5
-      kysely: 0.29.6
+      kysely: 0.29.7
 
   '@nestjs/common@12.3.2(reflect-metadata@0.2.2)(rxjs@7.8.2)':
     dependencies:
@@ -4283,7 +4283,7 @@ snapshots:
     dependencies:
       '@keyv/serialize': 1.1.1
 
-  kysely@0.29.6: {}
+  kysely@0.29.7: {}
 
   lazystream@1.0.1:
     dependencies:
