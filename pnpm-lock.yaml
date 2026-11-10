@@ -63,11 +63,11 @@ importers:
         version: link:../core
     devDependencies:
       '@mikro-orm/core':
-        specifier: 7.2.7
-        version: 7.2.7
+        specifier: 7.2.8
+        version: 7.2.8
       '@mikro-orm/postgresql':
         specifier: 7.2.7
-        version: 7.2.7(@mikro-orm/core@7.2.7)
+        version: 7.2.7(@mikro-orm/core@7.2.8)
       testcontainers:
         specifier: ^12.0.0
         version: 12.2.1
@@ -239,8 +239,8 @@ packages:
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
 
-  '@mikro-orm/core@7.2.7':
-    resolution: {integrity: sha512-46Fd5uhssmi4mkJRsWYhCOX08gseL9zTv9sjELsO1v1zNSeL59Bm4TvKVYHuW9zj+7OiE2o8dw2FSWNBfy0Www==}
+  '@mikro-orm/core@7.2.8':
+    resolution: {integrity: sha512-9E7wApevmNrqswey8pVT65nyBz1ejOafcdyHV2aKU9FmxnWr/MbfOVNlnpMe6D3+r+wsrVyx3dBJ0mHqTYQTCw==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
       dataloader: 2.2.3
@@ -2863,12 +2863,12 @@ snapshots:
 
   '@lukeed/csprng@1.1.0': {}
 
-  '@mikro-orm/core@7.2.7': {}
+  '@mikro-orm/core@7.2.8': {}
 
-  '@mikro-orm/postgresql@7.2.7(@mikro-orm/core@7.2.7)':
+  '@mikro-orm/postgresql@7.2.7(@mikro-orm/core@7.2.8)':
     dependencies:
-      '@mikro-orm/core': 7.2.7
-      '@mikro-orm/sql': 7.2.7(@mikro-orm/core@7.2.7)
+      '@mikro-orm/core': 7.2.8
+      '@mikro-orm/sql': 7.2.7(@mikro-orm/core@7.2.8)
       kysely: 0.29.8
       pg: 8.23.1
       pg-cursor: 2.22.1(pg@8.23.1)
@@ -2878,9 +2878,9 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@mikro-orm/sql@7.2.7(@mikro-orm/core@7.2.7)':
+  '@mikro-orm/sql@7.2.7(@mikro-orm/core@7.2.8)':
     dependencies:
-      '@mikro-orm/core': 7.2.7
+      '@mikro-orm/core': 7.2.8
       kysely: 0.29.8
 
   '@nestjs/common@12.4.0(reflect-metadata@0.2.2)(rxjs@7.8.2)':
